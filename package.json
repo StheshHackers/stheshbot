@@ -1,7 +1,15 @@
 {
   "name": "stheshbot-backend",
   "version": "1.0.0",
+  "scripts": {
+    "dev": "node dev-server.mjs",
+    "start": "node dev-server.mjs",
+    "test": "node --test test/*.test.mjs"
+  },
   "dependencies": {
     "@google/generative-ai": "^0.1.0"
+  },
+  "devDependencies": {
+    "jsdom": "^30.1.2"
   }
 }
