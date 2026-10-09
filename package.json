@@ -2,6 +2,7 @@
   "name": "stheshbot-backend",
   "version": "1.0.0",
   "scripts": {
+    "build": "node build.mjs",
     "dev": "node dev-server.mjs",
     "start": "node dev-server.mjs",
     "test": "node --test test/*.test.mjs"
