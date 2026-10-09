@@ -273,15 +273,48 @@ async function handleApi(request, env) {
     });
 }
 
+/* ------------------------------ CORS ----------------------------------- */
+// The static app can be hosted on GitHub Pages, so the API is called
+// cross-origin. Only these origins may use the endpoint.
+const CORS_ORIGINS = new Set([
+    'https://stheshhackers.github.io'
+]);
+
+function corsHeaders(origin) {
+    if (origin && CORS_ORIGINS.has(origin)) {
+        return {
+            'access-control-allow-origin': origin,
+            'access-control-allow-methods': 'GET, POST, OPTIONS',
+            'access-control-allow-headers': 'content-type',
+            'access-control-max-age': '86400',
+            vary: 'Origin'
+        };
+    }
+    return {};
+}
+
+function withCors(response, origin) {
+    const extra = corsHeaders(origin);
+    const keys = Object.keys(extra);
+    if (!keys.length) return response;
+    const headers = new Headers(response.headers);
+    for (const k of keys) headers.set(k, extra[k]);
+    return new Response(response.body, { status: response.status, statusText: response.statusText, headers });
+}
+
 /* ------------------------------ router --------------------------------- */
 export default {
     async fetch(request, env) {
         const url = new URL(request.url);
         if (url.pathname.startsWith('/api/')) {
+            const origin = request.headers.get('Origin');
+            if (request.method === 'OPTIONS') {
+                return new Response(null, { status: 204, headers: corsHeaders(origin) });
+            }
             try {
-                return await handleApi(request, env);
+                return withCors(await handleApi(request, env), origin);
             } catch (err) {
-                return json({ error: 'Worker error: ' + (err && err.message ? err.message : 'unknown') }, 500);
+                return withCors(json({ error: 'Worker error: ' + (err && err.message ? err.message : 'unknown') }, 500), origin);
             }
         }
         return env.ASSETS.fetch(request);

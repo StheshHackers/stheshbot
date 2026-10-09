@@ -432,6 +432,21 @@
    Multi-chat, markdown, streaming, image attachments, voice input.
    ================================================================ */
 
+// Chat backend location. '' = same origin, which is right for local dev and
+// the Cloudflare/Sites deployment (both serve /api/chat themselves). A static
+// host such as GitHub Pages has no backend, so we call the deployed Worker.
+// Override with window.STHESHBOT_API_BASE or <meta name="stheshbot-api" content="...">.
+const API_BASE = (function () {
+    try {
+        if (typeof window !== 'undefined' && window.STHESHBOT_API_BASE) return String(window.STHESHBOT_API_BASE).replace(/\/+$/, '');
+        const meta = document.querySelector('meta[name="stheshbot-api"]');
+        if (meta && meta.getAttribute('content')) return meta.getAttribute('content').replace(/\/+$/, '');
+        if (/\.github\.io$/i.test(location.hostname)) return 'https://site-63d7842fc00249ffb3965e55f623e74e.freebuff.page';
+    } catch (e) { /* fall back to same origin */ }
+    return '';
+})();
+const API_URL = API_BASE + '/api/chat';
+
 const LS_KEY = 'sthesh_state_v1';
 const LEGACY_KEY = 'sthesh_history';
 const MAX_HISTORY_SEND = 24;
@@ -965,7 +980,7 @@ async function requestReply(conv, history, prompt, attachmentPayload) {
     };
 
     try {
-        const resp = await fetch('/api/chat', {
+        const resp = await fetch(API_URL, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({
@@ -1278,7 +1293,7 @@ function exportChat() {
 
 async function checkHealth() {
     try {
-        const r = await fetch('/api/chat', { method: 'GET' });
+        const r = await fetch(API_URL, { method: 'GET' });
         const d = await r.json();
         if (d && d.mock) {
             setStatus(true, 'Demo mode (no API key)');
